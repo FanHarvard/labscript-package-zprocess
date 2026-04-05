@@ -272,10 +272,14 @@ def get_venv_executable_and_env(env=None):
     in is None, and needs to be modified for the subprocess, a copy of os.environ(),
     appropriately modified, will be returned."""
     base_executable = getattr(sys, '_base_executable', sys.executable)
+    if os.name == 'nt':
+        # On Windows, preserving the venv launcher path avoids spawning the base
+        # interpreter outside the environment, which can surface visible console
+        # windows for GUI applications and child workers.
+        return sys.executable, env
     if Path(base_executable) != Path(sys.executable):
         if env is None:
             env = os.environ.copy()
         env["__PYVENV_LAUNCHER__"] = str(sys.executable)
         return base_executable, env
     return sys.executable, env
-

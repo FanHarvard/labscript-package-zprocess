@@ -25,6 +25,7 @@ from zprocess import (ZMQServer, Process, TimeoutError, RichStreamHandler, rich_
 import zprocess.clientserver as clientserver
 from zprocess.clientserver import _typecheck_or_convert_data
 from zprocess.process_tree import _default_process_tree, EventBroker
+from zprocess.utils import get_venv_executable_and_env
 shared_secret = _default_process_tree.shared_secret
 from zprocess.security import SecureContext
 from zprocess.tasks import Task, TaskQueue
@@ -223,6 +224,16 @@ class ProcessTerminateTests(unittest.TestCase):
 
         # Should not leak subprocess.TimeoutExpired for a local child wait timeout:
         process.terminate(wait_timeout=0.1)
+
+
+class VenvExecutableTests(unittest.TestCase):
+    def test_windows_keeps_sys_executable(self):
+        with patch('zprocess.utils.os.name', 'nt'):
+            with patch('zprocess.utils.sys.executable', 'C:\\venv\\Scripts\\python.exe'):
+                with patch('zprocess.utils.sys._base_executable', 'C:\\base\\python.exe'):
+                    executable, env = get_venv_executable_and_env()
+        self.assertEqual(executable, 'C:\\venv\\Scripts\\python.exe')
+        self.assertIsNone(env)
 
 
 class HeartbeatClientTestProcess(Process):
